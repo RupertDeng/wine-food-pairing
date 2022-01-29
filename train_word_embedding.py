@@ -1,4 +1,4 @@
-import os
+from data_importer import import_food_data, import_wine_data, import_descriptor_mapping
 import numpy as np
 import pandas as pd
 import dask
@@ -9,6 +9,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from gensim.models.phrases import Phrases
+from gensim.models import word2vec, Word2Vec
 
 # download necessary nltk reference data to local folder, only need to be done once.
 # nltk.download('punkt', download_dir='/home/rupertd/Projects/wine-food-pairing/nltk_downloads')
@@ -19,31 +20,7 @@ dask.config.set(scheduler='processes', num_workers=16)
 stop_words = set(stopwords.words('english'))
 punc_table = str.maketrans({key: None for key in string.punctuation})
 snowball = SnowballStemmer('english')
-
-
-def import_wine_data():
-  '''
-  function to import wine review raw data into pandas dataframe
-  '''
-  folder_url = r'raw_data/wine_reviews/'
-  wine_raw_data = pd.DataFrame()
-  for file in os.listdir(folder_url):
-    file_url = folder_url + '/' + file
-    data_to_append = pd.read_csv(file_url, encoding='latin-1', low_memory=False)
-    wine_raw_data = pd.concat([wine_raw_data, data_to_append], axis=0, ignore_index=True)
-
-  wine_raw_data.drop_duplicates(subset=['Name'], inplace=True)
-  for geo in ['Subregion', 'Region', 'Province', 'Country']:
-    wine_raw_data[geo] = wine_raw_data[geo].apply(lambda g: str(g).strip())
-  
-  return wine_raw_data
-
-
-def import_food_data():
-  '''
-  function to import food review data into pandas dataframe
-  '''
-  return pd.read_csv('raw_data/amazon_food_reviews/Reviews.csv', low_memory=False)
+word2vec.FAST_VERSION = 1
 
 
 def tokenize_sentence_dataframe(df, col):
@@ -88,6 +65,14 @@ def normalize_sentence_dataframe(df, col):
   return df
 
 
+def find_mapped_descriptor(word, mapping):
+  try:
+    descriptor = mapping.at[word, 'level_3']
+    return str(descriptor)
+  except KeyError:
+    return word
+
+
 
 if __name__ == '__main__':
 
@@ -107,14 +92,13 @@ if __name__ == '__main__':
 
   # normalize words in sentence and remove empty sentence
   wine_sent_normalized = ddf.from_pandas(wine_sent_tokenized, npartitions=256).map_partitions(normalize_sentence_dataframe, 'Text', meta=wine_sent_tokenized).compute()
-  food_sent_normalized = ddf.from_pandas(food_sent_tokenized, npartitions=256).map_partitions(normalize_sentence_dataframe, 'Text', meta=wine_sent_tokenized).compute()
+  food_sent_normalized = ddf.from_pandas(food_sent_tokenized, npartitions=256).map_partitions(normalize_sentence_dataframe, 'Text', meta=food_sent_tokenized).compute()
   wine_sent_normalized.dropna(inplace=True)
   food_sent_normalized.dropna(inplace=True)
   # print(wine_sent_normalized)
   # print(food_sent_normalized)
 
   # use the whole review text corpus to train gensim bigram and tri-gram models
-
   wine_bigram_model = Phrases(wine_sent_normalized['Text'], min_count=100)
   wine_bigrams = [wine_bigram_model[sent] for sent in wine_sent_normalized['Text']]
   wine_trigram_model = Phrases(wine_bigrams, min_count=50)
@@ -125,10 +109,30 @@ if __name__ == '__main__':
   food_trigram_model = Phrases(food_bigrams, min_count=50)
   food_sent_phrased =[food_trigram_model[sent] for sent in food_bigrams]
 
+  wine_trigram_model.save('trained_models/wine_trigram_model.pkl')
+  food_trigram_model.save('trained_models/food_trigram_model.pkl')
+
   # print(len(wine_sent_phrased))
   # print(wine_sent_phrased[:10])
   # print(len(food_sent_phrased))
   # print(food_sent_phrased[:10])
+
+  # map common used words for descriping wine to a set of normalized descriptors
+  descriptor_mapping = import_descriptor_mapping()
+  wine_sent_mapped = [[find_mapped_descriptor(word, descriptor_mapping) for word in sent] for sent in wine_sent_phrased]
+
+  # do the same mapping for food, but skip the non-aroma descriptors
+  aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
+  food_sent_mapped = [[find_mapped_descriptor(word, aroma_descriptor_mapping) for word in sent] for sent in food_sent_phrased]
+
+
+  wine_food_sent_combined = wine_sent_mapped + food_sent_mapped
+  wine_food_word2vec_model = Word2Vec(wine_food_sent_combined, vector_size=300, min_count=8, workers=8, epochs=15)
+  # print(wine_food_word2vec_model)
+
+  wine_food_word2vec_model.save('trained_models/wine_food_word2vec_model.pkl')
+
+
 
 
 
