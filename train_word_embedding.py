@@ -1,8 +1,7 @@
 from data_importer import import_food_data, import_wine_data, import_descriptor_mapping
+from dask_multiprocessing import dask_compute
 import numpy as np
 import pandas as pd
-import dask
-import dask.dataframe as ddf
 import string
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -16,7 +15,6 @@ from gensim.models import word2vec, Word2Vec
 # nltk.download('stopwords', download_dir='/home/rupertd/Projects/wine-food-pairing/nltk_downloads')
 
 nltk.data.path.append('/home/rupertd/Projects/wine-food-pairing/nltk_downloads')
-dask.config.set(scheduler='processes', num_workers=16)
 stop_words = set(stopwords.words('english'))
 punc_table = str.maketrans({key: None for key in string.punctuation})
 snowball = SnowballStemmer('english')
@@ -65,13 +63,33 @@ def normalize_sentence_dataframe(df, col):
   return df
 
 
+def multi_gram_phrase_conversion(df, col, model):
+  """
+  convert each sentence row in df[col] based on multi-gram model 'model'
+  """
+  conversion = lambda sent: model[sent]
+  df[col] = df[col].map(conversion)
+  return df
+
+
 def find_mapped_descriptor(word, mapping):
+  """
+  find corresponding descriptor for 'word' in mapping, simply return word itself if not exist
+  """
   try:
     descriptor = mapping.at[word, 'level_3']
     return str(descriptor)
-  except KeyError:
+  except:
     return word
 
+
+def mapped_descriptor_conversion(df, col, mapping):
+  """
+  convert each sentence row in df[col] based on the descriptor mapping
+  """
+  conversion = lambda sent: [find_mapped_descriptor(word, mapping) for word in sent]
+  df[col] = df[col].map(conversion)
+  return df
 
 
 if __name__ == '__main__':
@@ -83,52 +101,70 @@ if __name__ == '__main__':
   # extract key review texts for wine and food
   wine_sent_raw = pd.DataFrame().assign(Text=wine_raw_data['Description'].map(str))
   food_sent_raw = pd.DataFrame().assign(Text=food_raw_data['Text'].map(str))
+
+  print('------------------- raw data imported --------------------')
+  print(wine_sent_raw)
+  print(food_sent_raw)
+  print('\n')
   
   # tokenize sentence
-  wine_sent_tokenized = ddf.from_pandas(wine_sent_raw, npartitions=256).map_partitions(tokenize_sentence_dataframe, 'Text', meta=wine_sent_raw).compute()
-  food_sent_tokenized = ddf.from_pandas(food_sent_raw, npartitions=256).map_partitions(tokenize_sentence_dataframe, 'Text', meta=food_sent_raw).compute()
-  # print(wine_sent_tokenized)
-  # print(food_sent_tokenized)
+  wine_sent_tokenized = dask_compute(wine_sent_raw, 256, 16, tokenize_sentence_dataframe, 'Text')
+  food_sent_tokenized = dask_compute(food_sent_raw, 256, 16, tokenize_sentence_dataframe, 'Text')
+
+  print('------------------- sentence tokenized --------------------')
+  print(wine_sent_tokenized)
+  print(food_sent_tokenized)
+  print('\n')
 
   # normalize words in sentence and remove empty sentence
-  wine_sent_normalized = ddf.from_pandas(wine_sent_tokenized, npartitions=256).map_partitions(normalize_sentence_dataframe, 'Text', meta=wine_sent_tokenized).compute()
-  food_sent_normalized = ddf.from_pandas(food_sent_tokenized, npartitions=256).map_partitions(normalize_sentence_dataframe, 'Text', meta=food_sent_tokenized).compute()
+  wine_sent_normalized = dask_compute(wine_sent_tokenized, 256, 16, normalize_sentence_dataframe, 'Text')
+  food_sent_normalized = dask_compute(food_sent_tokenized, 256, 16, normalize_sentence_dataframe, 'Text')
   wine_sent_normalized.dropna(inplace=True)
   food_sent_normalized.dropna(inplace=True)
-  # print(wine_sent_normalized)
-  # print(food_sent_normalized)
+
+  print('------------------- word normalized --------------------')
+  print(wine_sent_normalized)
+  print(food_sent_normalized)
+  print('\n')
 
   # use the whole review text corpus to train gensim bigram and tri-gram models
   wine_bigram_model = Phrases(wine_sent_normalized['Text'], min_count=100)
-  wine_bigrams = [wine_bigram_model[sent] for sent in wine_sent_normalized['Text']]
-  wine_trigram_model = Phrases(wine_bigrams, min_count=50)
-  wine_sent_phrased = [wine_trigram_model[sent] for sent in wine_bigrams]
+  wine_bigrams = dask_compute(wine_sent_normalized, 256, 16, multi_gram_phrase_conversion, 'Text', wine_bigram_model)
+  wine_trigram_model = Phrases(wine_bigrams['Text'], min_count=50)
+  wine_sent_phrased = dask_compute(wine_bigrams, 256, 16, multi_gram_phrase_conversion, 'Text', wine_trigram_model)
 
   food_bigram_model = Phrases(food_sent_normalized['Text'], min_count=100)
-  food_bigrams = [food_bigram_model[sent] for sent in food_sent_normalized['Text']]
-  food_trigram_model = Phrases(food_bigrams, min_count=50)
-  food_sent_phrased =[food_trigram_model[sent] for sent in food_bigrams]
+  food_bigrams = dask_compute(food_sent_normalized, 256, 16, multi_gram_phrase_conversion, 'Text', food_bigram_model)
+  food_trigram_model = Phrases(food_bigrams['Text'], min_count=50)
+  food_sent_phrased = dask_compute(food_bigrams, 256, 16, multi_gram_phrase_conversion, 'Text', food_trigram_model)
 
   wine_trigram_model.save('trained_models/wine_trigram_model.pkl')
   food_trigram_model.save('trained_models/food_trigram_model.pkl')
 
-  # print(len(wine_sent_phrased))
-  # print(wine_sent_phrased[:10])
-  # print(len(food_sent_phrased))
-  # print(food_sent_phrased[:10])
+
+  print('------------------- sentence converted with multi-gram phrases --------------------')
+  print(wine_sent_phrased)
+  print(food_sent_phrased)
+  print('\n')
 
   # map common used words for descriping wine to a set of normalized descriptors
   descriptor_mapping = import_descriptor_mapping()
-  wine_sent_mapped = [[find_mapped_descriptor(word, descriptor_mapping) for word in sent] for sent in wine_sent_phrased]
+  wine_sent_mapped = dask_compute(wine_sent_phrased, 256, 16, mapped_descriptor_conversion, 'Text', descriptor_mapping)
 
   # do the same mapping for food, but skip the non-aroma descriptors
   aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
-  food_sent_mapped = [[find_mapped_descriptor(word, aroma_descriptor_mapping) for word in sent] for sent in food_sent_phrased]
+  food_sent_mapped = dask_compute(food_sent_phrased, 256, 16, mapped_descriptor_conversion, 'Text', aroma_descriptor_mapping)
+  
+  print('------------------- sentence converted with descriptor mapping --------------------')
+  print(wine_sent_mapped)
+  print(food_sent_mapped)
+  print('\n')
 
-
-  wine_food_sent_combined = wine_sent_mapped + food_sent_mapped
-  wine_food_word2vec_model = Word2Vec(wine_food_sent_combined, vector_size=300, min_count=8, workers=8, epochs=15)
-  # print(wine_food_word2vec_model)
+  wine_food_sent_combined = list(wine_sent_mapped['Text']) + list(food_sent_mapped['Text'])
+  wine_food_word2vec_model = Word2Vec(wine_food_sent_combined, vector_size=300, min_count=8, workers=16, epochs=15)
+  
+  print('------------------- word2vec model trained --------------------')
+  print(wine_food_word2vec_model)
 
   wine_food_word2vec_model.save('trained_models/wine_food_word2vec_model.pkl')
 
