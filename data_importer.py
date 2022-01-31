@@ -53,3 +53,14 @@ def import_variety_mapping():
 
 def import_normalized_geo_data():
   return pd.read_csv('references/varieties_all_geos_normalized.csv', index_col=0)
+
+
+def import_taste_descriptor_mapping(core_tastes):
+  descriptors = pd.read_csv('references/descriptor_mapping_tastes.csv', encoding='latin1').set_index('raw descriptor')
+  mapping = dict()
+  for taste in core_tastes:
+    if taste == 'aroma':
+      mapping[taste] = descriptors.loc[descriptors['type'] == 'aroma']
+    else:
+      mapping[taste] = descriptors.loc[descriptors['primary taste'] == taste]
+  return mapping

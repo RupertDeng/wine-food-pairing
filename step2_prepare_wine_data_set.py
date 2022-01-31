@@ -1,4 +1,4 @@
-from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data
+from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data, import_taste_descriptor_mapping
 import pandas as pd
 
 
@@ -33,7 +33,7 @@ def trim_by_variety_geo_frequency(df, freq):
   trim_columns = ['Variety', 'geo_normalized']
   variety_geos = df.groupby(trim_columns).size().reset_index().rename(columns={0: 'count'})
   variety_geos = variety_geos.loc[variety_geos['count'] > freq]
-  trimmed_df = pd.merge(left=df, right=variety_geos, left_on=trim_columns, right_on=trim_columns).drop(['count'], axis=1)
+  trimmed_df = pd.merge(left=df, right=variety_geos, left_on=trim_columns, right_on=trim_columns).drop(['count'], axis=1).dropna()
   return trimmed_df
 
 
@@ -60,8 +60,12 @@ if __name__ == '__main__':
 
   # only keep (variety + geo) which appears more frequently 
   wine_df = trim_by_variety_geo_frequency(wine_df, 30)
+  
+  core_tastes = ['aroma', 'weight', 'sweet', 'acid', 'salt', 'piquant', 'fat', 'bitter']
+  taste_mapping_set = import_taste_descriptor_mapping(core_tastes)
 
-  print(wine_df)
+  
+  
   
   
 
