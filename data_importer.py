@@ -1,5 +1,7 @@
 import os
 import pandas as pd
+from gensim.models.phrases import Phraser
+from gensim.models import Word2Vec
 
 def import_wine_data():
   '''
@@ -52,10 +54,16 @@ def import_variety_mapping():
 
 
 def import_normalized_geo_data():
+  """
+  return a dataframe with different variety/geo columns normalized to a single column of geo data
+  """
   return pd.read_csv('references/varieties_all_geos_normalized.csv', index_col=0)
 
 
 def import_taste_descriptor_mapping(core_tastes):
+  """
+  return a dictionary with key as various tastes, value as a dataframe containing the mapping for the taste key
+  """
   descriptors = pd.read_csv('references/descriptor_mapping_tastes.csv', encoding='latin1').set_index('raw descriptor')
   mapping = dict()
   for taste in core_tastes:
@@ -64,3 +72,17 @@ def import_taste_descriptor_mapping(core_tastes):
     else:
       mapping[taste] = descriptors.loc[descriptors['primary taste'] == taste]
   return mapping
+
+
+def import_wine_phraser():
+  """
+  import trained wine trigram model from step1_train_word_embedding
+  """
+  return Phraser.load('trained_models/wine_trigram_model.pkl')
+
+def import_word2vec_model():
+  """
+  import trained word2vec model from step1_train_word_embedding
+  """
+  return Word2Vec.load('trained_models/wine_food_word2vec_model.pkl')
+
