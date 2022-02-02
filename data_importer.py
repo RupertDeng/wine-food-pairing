@@ -81,6 +81,13 @@ def import_wine_phraser():
   return Phraser.load('trained_models/wine_trigram_model.pkl')
 
 
+def import_food_phraser():
+  """
+  import trained food trigram model from step1_train_word_embedding
+  """
+  return Phraser.load('trained_models/food_trigram_model.pkl')
+
+
 def import_word2vec_model():
   """
   import trained word2vec model from step1_train_word_embedding
@@ -89,5 +96,16 @@ def import_word2vec_model():
 
 
 def import_descriptorized_wine_data():
+  """
+  import cleaned-up and descriptorized wine dataframe from step2_prepare_wine_data_set
+  """
   return pd.read_csv('processed_data/descriptorized_wine_df.csv')
+
+
+def import_list_of_foods():
+  """
+  return a comprehensive list of food as dataframe
+  """
+  df = pd.read_csv('references/list_of_foods.csv')
+  return list(df['Food'])
 
