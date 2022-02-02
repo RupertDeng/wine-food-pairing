@@ -1,9 +1,6 @@
-from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data, import_taste_descriptor_mapping, import_wine_phraser, import_word2vec_model
+from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data, import_taste_descriptor_mapping, import_wine_phraser
 import pandas as pd
-import numpy as np
 from step1_train_word_embedding import normalize_sentence
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import PCA
 from dask_multiprocessing import dask_compute
 
 def cleanup_variety(df, mapping):
@@ -72,30 +69,11 @@ def map_review_to_taste_descriptor(df, col, tokenizer, phraser, taste_mapping):
     try:
       phrased_sent = phraser[tokenizer(sent)]
       mapped_sent = [get_taste_descriptor(word, taste_mapping) for word in phrased_sent]
-      return [word for word in mapped_sent if word]
+      return ' '.join([word for word in mapped_sent if word])
     except:
-      return []
+      return ''
   
   df[col] = df[col].map(process_sent)
-  return df
-
-
-def convert_descriptor_to_vector(descriptors, tfidf_weighting, word2vec_model):
-  weighted_descriptors = []
-  for word in descriptors:
-    try:
-      weighting = tfidf_weighting.get(word)
-      word_vector = word2vec_model.wv.get_vector(word).reshape(1, 300)
-      weighted_word_vector = weighting * word_vector
-      weighted_descriptors.append(weighted_word_vector)
-    except:
-      continue
-  if len(weighted_descriptors) > 0:
-    return (sum(weighted_descriptors) / len(weighted_descriptors))[0]
-  return np.nan
-
-def vectorize_taste_dataframe(df, col, tfidf_weighting, word2vec_model):
-  df[col] = df[col].map(lambda sent: convert_descriptor_to_vector(sent, tfidf_weighting, word2vec_model))
   return df
 
 
@@ -128,24 +106,8 @@ if __name__ == '__main__':
     taste_df = pd.DataFrame({taste: wine_df['Description'].map(str)})
     taste_df = dask_compute(taste_df, 256, 16, map_review_to_taste_descriptor, taste, normalize_sentence, wine_trigram_model, taste_mapping_set[taste])
     wine_df = pd.concat([wine_df, taste_df], axis=1)
-
-  # for each wine's each taste descriptor, get a weighted vector using tfidf and trained word2vec model from step1. Also get average vector for each taste among all wines.
-  word2vec_model = import_word2vec_model()
-  avg_taste_vecs = dict()
-  for taste in core_tastes:
-    vectorizer = TfidfVectorizer()
-    taste_words = wine_df[taste].map(lambda sent: ' '.join(sent))
-    V = vectorizer.fit(taste_words)
-    tfidf_weighting = dict(zip(V.get_feature_names_out(), V.idf_))
-
-    col_name = f'{taste} vector'
-    vectorized_taste_df = pd.DataFrame({col_name: wine_df[taste]})
-    vectorized_taste_df = dask_compute(vectorized_taste_df, 256, 16, vectorize_taste_dataframe, col_name, tfidf_weighting, word2vec_model)
-    
-    avg_taste_vecs[taste] = np.average(vectorized_taste_df.dropna())
-    wine_df = pd.concat([wine_df, vectorized_taste_df], axis=1)
-
   
+  wine_df.to_csv('processed_data/descriptorized_wine_df.csv')
 
 
   

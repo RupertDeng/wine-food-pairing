@@ -80,9 +80,14 @@ def import_wine_phraser():
   """
   return Phraser.load('trained_models/wine_trigram_model.pkl')
 
+
 def import_word2vec_model():
   """
   import trained word2vec model from step1_train_word_embedding
   """
   return Word2Vec.load('trained_models/wine_food_word2vec_model.pkl')
+
+
+def import_descriptorized_wine_data():
+  return pd.read_csv('processed_data/descriptorized_wine_df.csv')
 
