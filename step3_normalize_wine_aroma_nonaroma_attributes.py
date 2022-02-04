@@ -48,4 +48,5 @@ def get_variety_geo_taste_vectors(wine_df, all_variety_geo, taste):
 
 if __name__ == '__main__':
   wine_df = import_descriptorized_wine_data()
+  
 
