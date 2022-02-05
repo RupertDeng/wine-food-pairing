@@ -85,7 +85,7 @@ def import_descriptorized_wine_data():
   """
   import cleaned-up and descriptorized wine dataframe from step2_prepare_wine_data_set
   """
-  return pd.read_csv('processed_data/descriptorized_wine_df.csv')
+  return pd.read_csv('processed_data/descriptorized_wine_df.csv', keep_default_na=False)
 
 
 def import_list_of_foods():
