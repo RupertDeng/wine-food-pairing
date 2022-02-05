@@ -14,7 +14,7 @@ def convert_descriptor_to_vector(descriptors, tfidf_weighting, word2vec_model):
   for word in descriptors.split(' '):
     if not word: continue
     try:
-      weighting = tfidf_weighting.get(word)
+      weighting = tfidf_weighting[word]
       word_vector = word2vec_model.wv.get_vector(word).reshape(1, 300)
       weighted_word_vector = weighting * word_vector
       weighted_descriptors.append(weighted_word_vector)

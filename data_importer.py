@@ -31,7 +31,7 @@ def import_food_data():
 
 
 def import_descriptor_mapping():
-  return pd.read_csv('references/descriptor_mapping.csv', encoding='latin1').set_index('raw descriptor')
+  return pd.read_csv('references/descriptor_mapping_tastes.csv', encoding='latin1').set_index('raw descriptor')
 
 
 def import_variety_mapping():
@@ -58,20 +58,6 @@ def import_normalized_geo_data():
   return a dataframe with different variety/geo columns normalized to a single column of geo data
   """
   return pd.read_csv('references/varieties_all_geos_normalized.csv', index_col=0)
-
-
-def import_taste_descriptor_mapping(core_tastes):
-  """
-  return a dictionary with key as various tastes, value as a dataframe containing the mapping for the taste key
-  """
-  descriptors = pd.read_csv('references/descriptor_mapping_tastes.csv', encoding='latin1').set_index('raw descriptor')
-  mapping = dict()
-  for taste in core_tastes:
-    if taste == 'aroma':
-      mapping[taste] = descriptors.loc[descriptors['type'] == 'aroma']
-    else:
-      mapping[taste] = descriptors.loc[descriptors['primary taste'] == taste]
-  return mapping
 
 
 def import_wine_phraser():

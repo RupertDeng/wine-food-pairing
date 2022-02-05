@@ -1,10 +1,12 @@
-from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data, import_taste_descriptor_mapping, import_wine_phraser
+from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data, import_descriptor_mapping, import_wine_phraser
 import pandas as pd
-from step1_train_word_embedding import normalize_sentence
+from step1_train_word_embedding import normalize_sentence, find_mapped_descriptor
 from dask_multiprocessing import dask_compute
 
 def cleanup_variety(df, mapping):
-  """normalize variety based on variety mapping"""
+  """
+  normalize variety based on variety mapping
+  """
   df['Variety'] = df['Variety'].map(lambda v: mapping.get(v, v))
   return df
 
@@ -51,14 +53,17 @@ def trim_by_variety_geo_frequency(df, freq):
   return trimmed_df
 
 
-def get_taste_descriptor(word, mapping_df):
+def create_taste_mapping_dict(core_tastes, descriptors):
   """
-  function to get taste descriptor for certain word. If there is no available mapping, simply return ''.
+  return a dictionary with key as various tastes, value as a dataframe containing the mapping for the taste key
   """
-  try:
-    return str(mapping_df.at[word, 'combined']).strip()
-  except:
-    return ''
+  mapping_dict = dict()
+  for taste in core_tastes:
+    if taste == 'aroma':
+      mapping_dict[taste] = descriptors.loc[descriptors['type'] == 'aroma']
+    else:
+      mapping_dict[taste] = descriptors.loc[descriptors['primary taste'] == taste]
+  return mapping_dict
 
 
 def map_review_to_taste_descriptor(df, col, tokenizer, phraser, taste_mapping):
@@ -68,7 +73,7 @@ def map_review_to_taste_descriptor(df, col, tokenizer, phraser, taste_mapping):
   def process_sent(sent):
     try:
       phrased_sent = phraser[tokenizer(sent)]
-      mapped_sent = [get_taste_descriptor(word, taste_mapping) for word in phrased_sent]
+      mapped_sent = [find_mapped_descriptor(word, taste_mapping) for word in phrased_sent]
       return ' '.join([word for word in mapped_sent if word])
     except:
       return ''
@@ -98,13 +103,14 @@ if __name__ == '__main__':
   
   # create a dictionary of taste descriptor mapping dataframes for all core tastes
   core_tastes = ['aroma', 'weight', 'sweet', 'acid', 'salt', 'piquant', 'fat', 'bitter']
-  taste_mapping_set = import_taste_descriptor_mapping(core_tastes)
+  descriptor_mapping = import_descriptor_mapping()
+  taste_mapping_dict = create_taste_mapping_dict(core_tastes, descriptor_mapping)
   
   # for each core taste, map review for every wine into corresponding taste descriptors
   wine_trigram_model = import_wine_phraser()
   for taste in core_tastes:
     taste_df = pd.DataFrame({taste: wine_df['Description'].map(str)})
-    taste_df = dask_compute(taste_df, 256, 16, map_review_to_taste_descriptor, taste, normalize_sentence, wine_trigram_model, taste_mapping_set[taste])
+    taste_df = dask_compute(taste_df, 256, 16, map_review_to_taste_descriptor, taste, normalize_sentence, wine_trigram_model, taste_mapping_dict[taste])
     wine_df = pd.concat([wine_df, taste_df], axis=1)
   
   wine_df.to_csv('processed_data/descriptorized_wine_df.csv')

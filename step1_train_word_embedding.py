@@ -77,17 +77,16 @@ def find_mapped_descriptor(word, mapping):
   find corresponding descriptor for 'word' in mapping, simply return word itself if not exist
   """
   try:
-    descriptor = mapping.at[word, 'level_3']
-    return str(descriptor)
+    return str(mapping.at[word, 'combined']).strip()
   except:
-    return word
+    return ''
 
 
 def mapped_descriptor_conversion(df, col, mapping):
   """
   convert each sentence row in df[col] based on the descriptor mapping
   """
-  conversion = lambda sent: [find_mapped_descriptor(word, mapping) for word in sent]
+  conversion = lambda sent: [find_mapped_descriptor(word, mapping) or word for word in sent]
   df[col] = df[col].map(conversion)
   return df
 
