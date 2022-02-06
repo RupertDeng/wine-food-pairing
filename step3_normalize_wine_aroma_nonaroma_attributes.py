@@ -23,7 +23,7 @@ def convert_descriptor_to_vector(descriptors, tfidf_weighting, word2vec_model):
       continue
   if len(weighted_descriptors) > 0:
     return np.average(weighted_descriptors, axis=0)
-  return ''
+  return np.nan
   
 
 def vectorize_taste_dataframe(df, col, tfidf_weighting, word2vec_model):
@@ -34,15 +34,29 @@ def vectorize_taste_dataframe(df, col, tfidf_weighting, word2vec_model):
   return df
 
 
-def get_variety_geo_taste_vectors(wine_df, all_variety_geo, taste):
-  col_name = f'{taste} vector'
-  var_geo_taste_vectors = []
-  for vg in all_variety_geo:
-    subset_df = wine_df.loc[(wine_df['Variety'] == vg[0]) & (wine_df['geo_normalized'] == vg[1])]
-    taste_vecs = subset_df[col_name].dropna()
-    # avg_taste_vec = np.average(taste_vecs) if not taste_vecs.empty else np.nan
-    var_geo_taste_vectors.append(avg_taste_vec)
-  return pd.DataFrame({'Variety-Geo': all_variety_geo, col_name: var_geo_taste_vectors})
+def get_limited_taste_scalar(variety_df, taste):
+  total_review = variety_df[taste].size
+  mentioned_review = variety_df[taste].loc[variety_df[taste] != ''].size
+  return mentioned_review / total_review
+
+def get_most_freq_descriptor(variety_df, taste):
+  pass
+
+
+def get_variety_vectors_descriptors(variety_geo, wine_df, core_tastes, limited_taste):
+  variety_df = wine_df.loc[(wine_df['Variey'] == variety_geo[0]) & (wine_df['geo_normalized'] == variety_geo[1])]
+  output_df = pd.DataFrame({'Variety': [variety_geo[0]], 'Geo': [variety_geo[1]]})
+  for taste in core_tastes:
+    if taste in limited_taste:
+      col_name = taste + ' scalar'
+      output_df[col_name] = [get_limited_taste_scalar(variety_df, taste)]
+    else:
+      vec_col = taste + ' vector'
+      output_df[vec_col] = [np.average(list(variety_df[taste]), axis=0)]
+      if taste == 'aroma':
+        desc_col = taste + ' descriptors'
+        output_df[desc_col] = [get_most_freq_descriptor(variety_df, taste)]
+  return output_df
 
 
 
@@ -68,9 +82,16 @@ if __name__ == '__main__':
     tfidf_weighting_dict = dict(zip(V.get_feature_names_out(), V.idf_))
     wine_df = dask_compute(wine_df, 256, 16, vectorize_taste_dataframe, taste, tfidf_weighting_dict, word2vec_model)
     
-    non_zero_vec = list(wine_df[taste].replace('', np.nan).dropna())
+    non_zero_vec = list(wine_df[taste].dropna())
     avg_vec = np.average(non_zero_vec, axis=0)
-    wine_df[taste] = [avg_vec if isinstance(r, str) else r for r in wine_df[taste]]
+    wine_df[taste] = [avg_vec if 'numpy' not in str(type(r)) else r for r in wine_df[taste]]
+
+  
+
+
+  
+
+  
 
   
 
