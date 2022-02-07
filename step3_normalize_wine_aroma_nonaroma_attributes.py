@@ -54,7 +54,7 @@ def get_most_freq_aroma_descriptor(variety_df):
     all_descriptors.extend(desc.split(' '))
   desc_freqs = Counter(all_descriptors)
   most_common_desc = desc_freqs.most_common(50)
-  return [(desc[0], '{:.2f}'.format(desc[1] / variety_df.size)) for desc in most_common_desc]
+  return [(desc[0], '{:.2f}'.format(desc[1] / variety_df.size * 100)) for desc in most_common_desc]
 
 
 def get_variety_vectors_descriptors(variety_geo, wine_df, core_tastes, limited_taste):
@@ -122,8 +122,15 @@ if __name__ == '__main__':
     wine_variety_df.rename(columns = {col_name: taste + ' scalar'}, inplace=True)
 
 
-  wine_variety_df.to_csv('processed_data/wine_variety_descriptor_vector.csv')
+  # store most common descriptors in a separate dataframe with one descriptor per line
+  wine_variety_descriptor_df = wine_variety_df[['Variety', 'Geo', 'aroma descriptors']].explode('aroma descriptors', ignore_index=True)
+  wine_variety_descriptor_df[['descriptor', 'frequency']] = wine_variety_descriptor_df['aroma descriptors'].to_list()
+  wine_variety_descriptor_df.drop('aroma descriptors', axis=1, inplace=True)
+
+  wine_variety_vector_df = wine_variety_df.drop('aroma descriptors', axis=1)
   
+  wine_variety_vector_df.to_csv('processed_data/wine_variety_vector.csv')
+  wine_variety_descriptor_df.to_csv('processed_data/wine_variety_aroma_descriptor.csv')
   
   
 

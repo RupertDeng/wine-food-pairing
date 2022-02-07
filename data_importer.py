@@ -1,5 +1,8 @@
+import ast
 import os
+import re
 import pandas as pd
+import numpy as np
 from gensim.models.phrases import Phraser
 from gensim.models import Word2Vec
 
@@ -94,4 +97,19 @@ def import_list_of_foods():
   """
   df = pd.read_csv('references/list_of_foods.csv')
   return list(df['Food'])
+
+
+def import_wine_variety_vector_data():
+
+  def nparray_str_to_list(arr):
+    vector = re.sub('\s+', ',', arr).replace('[,', '[')
+    return np.array(ast.literal_eval(vector))
+
+  wine_vector_df = pd.read_csv('processed_data/wine_variety_vector.csv', index_col=0)
+  wine_vector_df['aroma vector'] = wine_vector_df['aroma vector'].map(nparray_str_to_list)
+  return wine_vector_df
+
+
+def import_wine_variety_descriptor_data():
+  return pd.read_csv('processed_data/wine_variety_aroma_descriptor.csv', index_col=0)
 
