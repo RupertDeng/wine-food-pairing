@@ -111,5 +111,7 @@ def import_wine_variety_vector_data():
 
 
 def import_wine_variety_descriptor_data():
-  return pd.read_csv('processed_data/wine_variety_aroma_descriptor.csv', index_col=0)
+  wine_descriptor_df = pd.read_csv('processed_data/wine_variety_aroma_descriptor.csv', index_col=0)
+  wine_descriptor_df['frequency'] = wine_descriptor_df['frequency'].map(int)
+  return wine_descriptor_df
 
