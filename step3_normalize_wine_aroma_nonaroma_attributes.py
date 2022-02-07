@@ -54,7 +54,7 @@ def get_most_freq_aroma_descriptor(variety_df):
     all_descriptors.extend(desc.split(' '))
   desc_freqs = Counter(all_descriptors)
   most_common_desc = desc_freqs.most_common(50)
-  return [(desc[0], '{:.2f}'.format(desc[1] / len(all_descriptors))) for desc in most_common_desc]
+  return [(desc[0], '{:.2f}'.format(desc[1] / variety_df.size)) for desc in most_common_desc]
 
 
 def get_variety_vectors_descriptors(variety_geo, wine_df, core_tastes, limited_taste):
