@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
   # now, we need to converge all data for each variety-geo combination
   # for limited-tastes, get a frequency scalar; and for other tastes, get an average vector
-  variety_geos = list(set(zip(wine_df['Variety'], wine_df['geo_normalized'])))
+  variety_geos = sorted(set(zip(wine_df['Variety'], wine_df['geo_normalized'])))
   wine_variety_df = pd.DataFrame()
   for v_g in variety_geos:
     row_for_variety = get_variety_vectors_descriptors(v_g, wine_df, core_tastes, limited_tastes)
