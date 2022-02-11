@@ -81,8 +81,8 @@ def normalize_nonaroma_scalar(wine_df, taste):
   col_name = taste + ' scalar'
   max_value = wine_df[col_name].max()
   min_value = wine_df[col_name].min()
-  df[col_name] = df[col_name].map(lambda x: (x - min_value) / (max_value - min_value))
-  return df
+  wine_df[col_name] = wine_df[col_name].map(lambda x: (x - min_value) / (max_value - min_value))
+  return wine_df
 
 
 if __name__ == '__main__':
