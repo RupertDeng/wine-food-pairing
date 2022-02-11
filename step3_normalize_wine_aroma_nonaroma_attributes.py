@@ -77,6 +77,14 @@ def get_variety_vectors_descriptors(variety_geo, wine_df, core_tastes, limited_t
   return output_df
 
 
+def normalize_nonaroma_scalar(wine_df, taste):
+  col_name = taste + ' scalar'
+  max_value = wine_df[col_name].max()
+  min_value = wine_df[col_name].min()
+  df[col_name] = df[col_name].map(lambda x: (x - min_value) / (max_value - min_value))
+  return df
+
+
 if __name__ == '__main__':
   
   # import descriptoried wine dataframe, both the aroma and nonaroma attributes have been standardized against a set of descriptors
@@ -128,6 +136,18 @@ if __name__ == '__main__':
   wine_variety_descriptor_df.drop('aroma descriptors', axis=1, inplace=True)
 
   wine_variety_vector_df = wine_variety_df.drop('aroma descriptors', axis=1)
+
+  # for the nonaroma scalars, sweet/salt/piquant/fat are in order, weight/acid/bitter need to be flipped to match common sense (larger value means more)
+  for taste in ['weight', 'acid', 'bitter']:
+    col_name = taste + ' scalar'
+    wine_variety_vector_df[col_name] = wine_variety_vector_df[col_name].map(lambda x: -x)
+
+
+  # for the last step, normalize all the nonaroma scalars into [0, 1]
+  for taste in core_tastes:
+    if taste == 'aroma': continue
+    wine_variety_vector_df = normalize_nonaroma_scalar(wine_variety_vector_df, taste)
+
   
   wine_variety_vector_df.to_csv('processed_data/wine_variety_vector.csv')
   wine_variety_descriptor_df.to_csv('processed_data/wine_variety_aroma_descriptor.csv')
