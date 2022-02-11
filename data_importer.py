@@ -99,19 +99,23 @@ def import_list_of_foods():
   return list(df['Food'])
 
 
-def import_wine_variety_vector_data():
+def nparray_str_to_list(arr):
+  vector = re.sub('\s+', ',', arr).replace('[,', '[')
+  return np.array(ast.literal_eval(vector))
 
-  def nparray_str_to_list(arr):
-    vector = re.sub('\s+', ',', arr).replace('[,', '[')
-    return np.array(ast.literal_eval(vector))
 
+def import_wine_variety_vector_info():
   wine_vector_df = pd.read_csv('processed_data/wine_variety_vector.csv', index_col=0)
   wine_vector_df['aroma vector'] = wine_vector_df['aroma vector'].map(nparray_str_to_list)
   return wine_vector_df
 
 
-def import_wine_variety_descriptor_data():
-  wine_descriptor_df = pd.read_csv('processed_data/wine_variety_aroma_descriptor.csv', index_col=0)
-  wine_descriptor_df['frequency'] = wine_descriptor_df['frequency'].map(int)
-  return wine_descriptor_df
+def import_wine_variety_descriptor_info():
+  return pd.read_csv('processed_data/wine_variety_aroma_descriptor.csv', index_col=0)
+
+
+def import_food_nonaroma_info():
+  food_nonaroma_df = pd.read_csv('processed_data/food_nonaroma_df.csv', index_col=0)
+  food_nonaroma_df['average_vec'] = food_nonaroma_df['average_vec'].map(nparray_str_to_list)
+  return food_nonaroma_df
 
