@@ -1,6 +1,7 @@
-from data_importer import import_wine_variety_vector_info, import_wine_variety_descriptor_info, import_food_nonaroma_info, import_word2vec_model
+from data_importer import import_food_phraser, import_aroma_descriptor_mapping, import_wine_variety_vector_info, import_wine_variety_descriptor_info, import_food_nonaroma_info, import_word2vec_model
 from scipy import spatial
-from step4_prepare_food_data_set import get_avg_food_vector
+from step1_train_word_embedding import normalize_sentence
+from step4_prepare_food_data_set import get_food_list_avg_vector
 
 
 def minmax_scaler(val, min_val, max_val):
@@ -38,7 +39,7 @@ def get_standardized_nonaroma_values(taste, avg_food_embedding, food_nonaroma_df
 
 def retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, word2vec):
   food_nonaroma_values = dict()
-  avg_food_embedding = get_avg_food_vector(food_list, word2vec)
+  avg_food_embedding = get_food_list_avg_vector(food_list)
   for nonaroma in core_nonaromas:
     food_nonaroma_values[nonaroma] = get_standardized_nonaroma_values(nonaroma, avg_food_embedding, food_nonaroma_df)
   return food_nonaroma_values, avg_food_embedding
@@ -52,6 +53,13 @@ if __name__ == '__main__':
   wine_descriptor_df = import_wine_variety_descriptor_info()
   food_nonaroma_df = import_food_nonaroma_info()
   core_nonaromas = ['weight', 'sweet', 'acid', 'salt', 'piquant', 'fat', 'bitter']
+
+
+  # import key utility functions
+  food_tokenizer = normalize_sentence
+  food_phraser = import_food_phraser()
+  aroma_descriptor_mapper = import_aroma_descriptor_mapping()
+  word2vec = import_word2vec_model() 
 
   food_list = ['apple_pie']
 
