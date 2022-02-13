@@ -127,9 +127,9 @@ if __name__ == '__main__':
   print('\n')
 
   # use the whole review text corpus to train gensim bigram and tri-gram models
-  wine_bigram_model = Phrases(wine_sent_normalized['Text'], min_count=100, threshold=1)
+  wine_bigram_model = Phrases(wine_sent_normalized['Text'], min_count=100, threshold=10)
   wine_bigrams = dask_compute(wine_sent_normalized, 256, 16, multi_gram_phrase_conversion, 'Text', wine_bigram_model)
-  wine_trigram_model = Phrases(wine_bigrams['Text'], min_count=50, threshold=1)
+  wine_trigram_model = Phrases(wine_bigrams['Text'], min_count=50, threshold=10)
   wine_sent_phrased = dask_compute(wine_bigrams, 256, 16, multi_gram_phrase_conversion, 'Text', wine_trigram_model)
 
   food_bigram_model = Phrases(food_sent_normalized['Text'], min_count=100, threshold=1)
