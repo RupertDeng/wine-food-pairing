@@ -5,15 +5,15 @@ import numpy as np
 import pandas as pd
 
 
-def get_food_vector(food, text_normalizer, text_phraser, descriptor_mapper, word2vec):
-  food_normalized = text_normalier(food)
-  food_phrased = text_phraser[food_normalized]
-  food_descriptorized = [find_mapped_descriptor(part, descriptor_mapper) for part in food_phrased]
+def get_food_vector(food, text_tokenizer, text_phraser, descriptor_mapper, word2vec):
+  food_tokenized = text_tokenizer(food)
+  food_phrased = text_phraser[food_tokenized]
+  food_descriptorized = [find_mapped_descriptor(part, descriptor_mapper) or part for part in food_phrased]
 
   vec = []
   for part in food_descriptorized:
     try:
-      vec.append(word2vec.wv[f])
+      vec.append(word2vec.wv[part])
     except:
       continue
   
@@ -21,20 +21,34 @@ def get_food_vector(food, text_normalizer, text_phraser, descriptor_mapper, word
     return np.average(vec, axis=0)
   else:
     return None
+  
+
+def get_food_list_avg_vector(food_list, text_tokenizer, text_phraser, descriptor_mapper, word2vec):
+  vectors = []
+  for food in food_list:
+    vec = get_food_vector(food, text_tokenizer, text_phraser, descriptor_mapper, word2vec)
+    if vec is not None:
+      vectors.append(vec)
+  
+  if len(vectors) > 0:
+    return np.average(vectors, axis=0)
+  else:
+    return None
+
       
 
 if __name__ == '__main__':
 
-  # import the list of food, text_phraser, and word2vec_model
+  # import the list of food, and necessuary utilities for processing: text normalizer, phraser, descrptor_mapper, word2vec_model
   food_list = import_list_of_foods()
-  food_text_normalizer = normalize_sentence
+  food_text_tokenizer = normalize_sentence
   food_text_phraser = import_food_phraser()
   food_descriptor_mapper = import_aroma_descriptor_mapping()
   word2vec_model = import_word2vec_model()
 
   food_vectors = dict()
   for food in food_list:
-    vec = get_food_vector(food, food_text_normalizer, food_text_phraser, food_descriptor_mapper, word2vec_model)
+    vec = get_food_vector(food, food_text_tokenizer, food_text_phraser, food_descriptor_mapper, word2vec_model)
     if vec is not None:
       food_vectors[food] = vec
 
@@ -53,9 +67,9 @@ if __name__ == '__main__':
   avg_taste_vecs = dict()
   core_taste_distances = dict()
 
-  for taste, keywords in core_tastes.items():
+  for taste, key_food_list in core_tastes.items():
 
-    avg_vec = get_avg_food_vector(keywords, word2vec_model)
+    avg_vec = get_food_list_avg_vector(key_food_list, food_text_tokenizer, food_text_phraser, food_descriptor_mapper, word2vec_model)
     avg_taste_vecs[taste] = avg_vec
 
     taste_dist = dict()

@@ -74,19 +74,19 @@ def multi_gram_phrase_conversion(df, col, model):
 
 def find_mapped_descriptor(word, mapping):
   """
-  find corresponding descriptor for 'word' in mapping, simply return word itself if not exist
+  find corresponding descriptor for 'word' in mapping, return empty string if not exist
   """
   try:
     return str(mapping.at[word, 'combined']).strip()
   except:
-    return word
+    return ''
 
 
 def mapped_descriptor_conversion(df, col, mapping):
   """
-  convert each sentence row in df[col] based on the descriptor mapping
+  convert each sentence row in df[col] based on the descriptor mapping. if not descriptor exists, simply use the word itself.
   """
-  conversion = lambda sent: [find_mapped_descriptor(word, mapping) for word in sent]
+  conversion = lambda sent: [find_mapped_descriptor(word, mapping) or word for word in sent]
   df[col] = df[col].map(conversion)
   return df
 
@@ -127,14 +127,14 @@ if __name__ == '__main__':
   print('\n')
 
   # use the whole review text corpus to train gensim bigram and tri-gram models
-  wine_bigram_model = Phrases(wine_sent_normalized['Text'], min_count=100)
+  wine_bigram_model = Phrases(wine_sent_normalized['Text'], min_count=100, threshold=1)
   wine_bigrams = dask_compute(wine_sent_normalized, 256, 16, multi_gram_phrase_conversion, 'Text', wine_bigram_model)
-  wine_trigram_model = Phrases(wine_bigrams['Text'], min_count=50)
+  wine_trigram_model = Phrases(wine_bigrams['Text'], min_count=50, threshold=1)
   wine_sent_phrased = dask_compute(wine_bigrams, 256, 16, multi_gram_phrase_conversion, 'Text', wine_trigram_model)
 
-  food_bigram_model = Phrases(food_sent_normalized['Text'], min_count=100)
+  food_bigram_model = Phrases(food_sent_normalized['Text'], min_count=100, threshold=1)
   food_bigrams = dask_compute(food_sent_normalized, 256, 16, multi_gram_phrase_conversion, 'Text', food_bigram_model)
-  food_trigram_model = Phrases(food_bigrams['Text'], min_count=50)
+  food_trigram_model = Phrases(food_bigrams['Text'], min_count=50, threshold=1)
   food_sent_phrased = dask_compute(food_bigrams, 256, 16, multi_gram_phrase_conversion, 'Text', food_trigram_model)
 
   wine_trigram_model.save('trained_models/wine_trigram_model.pkl')
