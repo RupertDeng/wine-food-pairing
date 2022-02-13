@@ -1,4 +1,4 @@
-from data_importer import import_food_data, import_wine_data, import_descriptor_mapping
+from data_importer import import_food_data, import_wine_data, import_descriptor_mapping, import_aroma_descriptor_mapping
 from dask_multiprocessing import dask_compute
 import numpy as np
 import pandas as pd
@@ -79,14 +79,14 @@ def find_mapped_descriptor(word, mapping):
   try:
     return str(mapping.at[word, 'combined']).strip()
   except:
-    return ''
+    return word
 
 
 def mapped_descriptor_conversion(df, col, mapping):
   """
   convert each sentence row in df[col] based on the descriptor mapping
   """
-  conversion = lambda sent: [find_mapped_descriptor(word, mapping) or word for word in sent]
+  conversion = lambda sent: [find_mapped_descriptor(word, mapping) for word in sent]
   df[col] = df[col].map(conversion)
   return df
 
@@ -151,7 +151,7 @@ if __name__ == '__main__':
   wine_sent_mapped = dask_compute(wine_sent_phrased, 256, 16, mapped_descriptor_conversion, 'Text', descriptor_mapping)
 
   # do the same mapping for food, but skip the non-aroma descriptors
-  aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
+  aroma_descriptor_mapping = import_aroma_descriptor_mapping()
   food_sent_mapped = dask_compute(food_sent_phrased, 256, 16, mapped_descriptor_conversion, 'Text', aroma_descriptor_mapping)
   
   print('------------------- sentence converted with descriptor mapping --------------------')

@@ -1,19 +1,22 @@
-from data_importer import import_list_of_foods, import_food_phraser, import_word2vec_model
-from step1_train_word_embedding import normalize_sentence
+from data_importer import import_list_of_foods, import_food_phraser, import_word2vec_model, import_aroma_descriptor_mapping
+from step1_train_word_embedding import normalize_sentence, find_mapped_descriptor
 from scipy import spatial
 import numpy as np
 import pandas as pd
 
-def get_avg_food_vector(foods, word2vec):
-  """
-  get average food vector from a list of foods
-  """
+
+def get_food_vector(food, text_normalizer, text_phraser, descriptor_mapper, word2vec):
+  food_normalized = text_normalier(food)
+  food_phrased = text_phraser[food_normalized]
+  food_descriptorized = [find_mapped_descriptor(part, descriptor_mapper) for part in food_phrased]
+
   vec = []
-  for f in foods:
+  for part in food_descriptorized:
     try:
       vec.append(word2vec.wv[f])
     except:
       continue
+  
   if len(vec) > 0:
     return np.average(vec, axis=0)
   else:
@@ -22,19 +25,18 @@ def get_avg_food_vector(foods, word2vec):
 
 if __name__ == '__main__':
 
-  # import the list of food and normalize and phrase each of them
+  # import the list of food, text_phraser, and word2vec_model
   food_list = import_list_of_foods()
-  food_trigram_model = import_food_phraser()
-  food_list_normalized = [normalize_sentence(f) for f in food_list]
-  food_list_phrased = [food_trigram_model[f] for f in food_list_normalized]
-
-  # get a embedding vector for each food if possible
+  food_text_normalizer = normalize_sentence
+  food_text_phraser = import_food_phraser()
+  food_descriptor_mapper = import_aroma_descriptor_mapping()
   word2vec_model = import_word2vec_model()
+
   food_vectors = dict()
-  for food in food_list_phrased:
-    vec = get_avg_food_vector(food, word2vec_model)
+  for food in food_list:
+    vec = get_food_vector(food, food_text_normalizer, food_text_phraser, food_descriptor_mapper, word2vec_model)
     if vec is not None:
-      food_vectors[' '.join(food)] = vec
+      food_vectors[food] = vec
 
   # define the core nonaroma tastes and a list of common words representing each of them
   core_tastes = {

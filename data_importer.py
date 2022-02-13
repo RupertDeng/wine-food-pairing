@@ -34,8 +34,20 @@ def import_food_data():
 
 
 def import_descriptor_mapping():
+  """
+  function to import descriptor_mapping for all aroma and nonaroma core tastes, to standardize wine review words.
+  """
   return pd.read_csv('references/descriptor_mapping_tastes.csv', encoding='latin1').set_index('raw descriptor')
 
+
+def import_aroma_descriptor_mapping():
+  """
+  function to import descriptor_mapping for only aroma tastes, to standardize food review words.
+  """
+  descriptor_mapping = import_descriptor_mapping()
+  aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
+  return aroma_descriptor_mapping
+  
 
 def import_variety_mapping():
   variety_mapping = {'Shiraz': 'Syrah', 'Pinot Gris': 'Pinot Grigio', 'Pinot Grigio/Gris': 'Pinot Grigio',
