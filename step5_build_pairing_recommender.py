@@ -45,6 +45,21 @@ def retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, te
   return food_nonaroma_values, avg_food_embedding
 
 
+def standardize_wine_nonaroma_scalar(taste, wine_scalar):
+  groups = {
+    'weight': {1: (0, 0.3), 2: (0.3, 0.55), 3: (0.55, 0.75), 4: (0.75, 1)},
+    'sweet': {1: (0, 0.25), 2: (0.25, 0.5), 3: (0.5, 0.7), 4: (0.7, 1)},
+    'acid': {1: (0, 0.6), 2: (0.6, 0.8), 3: (0.8, 0.95), 4: (0.95, 1)},
+    'salt': {1: (0, 0.1), 2: (0.1, 0.25), 3: (0.25, 0.45), 4: (0.45, 1)},
+    'piquant': {1: (0, 0.1), 2: (0.1, 0.3), 3: (0.3, 0.55), 4: (0.55, 1)},
+    'fat': {1: (0, 0.1), 2: (0.1, 0.25), 3: (0.25, 0.55), 4: (0.55, 1)},
+    'bitter': {1: (0, 0.3), 2: (0.3, 0.5), 3: (0.5, 0.75), 4: (0.75, 1)}
+    }
+
+  for group, (lower, upper) in groups[taste].items():
+    if group == 1 and lower <= wine_scalar <= upper or group != 1 and lower < wine_scalar <= upper:
+      return group
+
 
 if __name__ == '__main__':
 
@@ -58,7 +73,15 @@ if __name__ == '__main__':
   food_tokenizer = normalize_sentence
   food_phraser = import_food_phraser()
   aroma_descriptor_mapper = import_aroma_descriptor_mapping()
-  word2vec = import_word2vec_model() 
+  word2vec = import_word2vec_model()
+
+
+  # standardize wine nonaroma scalar to a scale of 1 to 4
+  for taste in core_nonaromas:
+    col_name = taste + ' scalar'
+    wine_vector_df[col_name] = wine_vector_df[col_name].map(lambda scalar: standardize_wine_nonaroma_scalar(taste, scalar))
+  
+  
 
   
   
