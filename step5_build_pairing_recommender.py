@@ -12,11 +12,11 @@ def minmax_scaler(val, min_val, max_val):
 def standardize_food_similarity(taste, similarity):
   groups = {
     'weight': {1: (0, 0.3), 2: (0.3, 0.5), 3: (0.5, 0.7), 4: (0.7, 1)},
-    'sweet': {1: (0, 0.45), 2: (0.45, 0.6), 3: (0.6, 0.8), 4: (0.8, 1)},
-    'acid': {1: (0, 0.4), 2: (0.4, 0.55), 3: (0.55, 0.7), 4: (0.7, 1)},
-    'salt': {1: (0, 0.3), 2: (0.3, 0.55), 3: (0.55, 0.8), 4: (0.8, 1)},
-    'piquant': {1: (0, 0.4), 2: (0.4, 0.6), 3: (0.6, 0.8), 4: (0.8, 1)},
-    'fat': {1: (0, 0.4), 2: (0.4, 0.5), 3: (0.5, 0.6), 4: (0.6, 1)},
+    'sweet': {1: (0, 0.3), 2: (0.3, 0.5), 3: (0.5, 0.7), 4: (0.7, 1)},
+    'acid': {1: (0, 0.4), 2: (0.4, 0.55), 3: (0.55, 0.68), 4: (0.68, 1)},
+    'salt': {1: (0, 0.42), 2: (0.42, 0.55), 3: (0.55, 0.72), 4: (0.72, 1)},
+    'piquant': {1: (0, 0.5), 2: (0.5, 0.61), 3: (0.61, 0.8), 4: (0.8, 1)},
+    'fat': {1: (0, 0.4), 2: (0.4, 0.55), 3: (0.55, 0.65), 4: (0.65, 1)},
     'bitter': {1: (0, 0.3), 2: (0.3, 0.5), 3: (0.5, 0.65), 4: (0.65, 1)}
     }
   
@@ -31,15 +31,15 @@ def get_standardized_nonaroma_values(taste, avg_food_embedding, food_nonaroma_df
   closest = food_nonaroma_df.at[taste, 'closest']
 
   similarity = 1 - spatial.distance.cosine(avg_taste_vec, avg_food_embedding)
-  scaled_similarity = minmax_scaler(similarity, closest, farthest)
-  standardized_similarity = standardize_food_similarity(taste, similarity)
+  scaled_similarity = minmax_scaler(similarity, farthest, closest)
+  standardized_similarity = standardize_food_similarity(taste, scaled_similarity)
   
   return (scaled_similarity, standardized_similarity)
   
 
-def retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, word2vec):
+def retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, text_tokenizer, text_phraser, descriptor_mapper, word2vec):
   food_nonaroma_values = dict()
-  avg_food_embedding = get_food_list_avg_vector(food_list)
+  avg_food_embedding = get_food_list_avg_vector(food_list, text_tokenizer, text_phraser, descriptor_mapper, word2vec)
   for nonaroma in core_nonaromas:
     food_nonaroma_values[nonaroma] = get_standardized_nonaroma_values(nonaroma, avg_food_embedding, food_nonaroma_df)
   return food_nonaroma_values, avg_food_embedding
@@ -54,17 +54,11 @@ if __name__ == '__main__':
   food_nonaroma_df = import_food_nonaroma_info()
   core_nonaromas = ['weight', 'sweet', 'acid', 'salt', 'piquant', 'fat', 'bitter']
 
-
   # import key utility functions
   food_tokenizer = normalize_sentence
   food_phraser = import_food_phraser()
   aroma_descriptor_mapper = import_aroma_descriptor_mapping()
   word2vec = import_word2vec_model() 
-
-  food_list = ['apple_pie']
-
-
-
 
   
   

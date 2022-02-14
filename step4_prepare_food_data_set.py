@@ -54,13 +54,13 @@ if __name__ == '__main__':
 
   # define the core nonaroma tastes and a list of common words representing each of them
   core_tastes = {
-    'weight': ['heavy', 'cassoulet', 'burger', 'full_bodied', 'thick', 'milk', 'fat', 'mincemeat', 'steak', 'bold', 'pizza', 'pasta', 'creamy', 'bread'],
-    'sweet': ['sweet', 'sugar', 'cake', 'mango', 'stevia'], 
-    'acid': ['acid', 'sour', 'vinegar', 'yoghurt', 'cevich', 'pickle'],
-    'salt': ['salty', 'parmesan', 'oyster', 'pizza', 'bacon', 'cured_meat', 'sausage', 'potato_chip'], 
-    'piquant': ['spicy', 'pepper', 'mustard', 'paprika', 'curry'], 
-    'fat': ['fat', 'fried', 'creamy', 'cassoulet', 'foie_gras', 'buttery', 'sausage', 'brie', 'carbonara', 'cake'], 
-    'bitter': ['bitter', 'kale', 'coffee', 'arugula']
+    'weight': ['heavy', 'cassoulet', 'burger', 'full bodied', 'thick', 'milk', 'fat', 'mince meat', 'steak', 'bold', 'pizza', 'pasta', 'creamy', 'prime rib'],
+    'sweet': ['sweet', 'sweet', 'sugar', 'sugar', 'cake', 'mango', 'stevia', 'ice cream'], 
+    'acid': ['acid', 'sour', 'vinegar', 'yoghurt', 'cevich', 'pickle', 'cevich'],
+    'salt': ['salty', 'salty', 'parmesan', 'oyster', 'pizza', 'bacon', 'bacon', 'cured meat', 'sausage', 'potato chip'], 
+    'piquant': ['spicy', 'spicy', 'cayenne pepper', 'mustard', 'paprika', 'curry'], 
+    'fat': ['fat', 'fried', 'creamy', 'cassoulet', 'foie gras', 'foie gras', 'buttery', 'sausage', 'brie', 'carbonara', 'cake'], 
+    'bitter': ['bitter', 'kale', 'coffee']
     }
 
   # use core_tastes above to define the average vector for each taste, also calculate vector distance from the average to each food in list
