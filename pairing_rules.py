@@ -1,3 +1,5 @@
+import numpy as np
+
 def weight_rule(df, food_weight):
     # Rule 1: the wine should have at least the same body as the food
     df = df.loc[(df['weight'] >= food_weight[1] - 1) & (df['weight'] <= food_weight[1])]
