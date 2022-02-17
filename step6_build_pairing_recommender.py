@@ -1,9 +1,8 @@
-from webbrowser import get
 from data_importer import import_food_phraser, import_aroma_descriptor_mapping, import_wine_variety_vector_info, import_wine_variety_descriptor_info, import_food_nonaroma_info, import_word2vec_model
 from scipy import spatial
 from step1_train_word_embedding import normalize_sentence
 from step4_prepare_food_data_set import get_food_list_avg_vector
-from step5_define_pairing_rules import nonaroma_ruling, congruent_or_contrasting
+from step5_define_pairing_rules import nonaroma_ruling, congruent_or_contrasting_pairing
 
 
 def minmax_scaler(val, min_val, max_val):
@@ -65,10 +64,29 @@ def standardize_wine_nonaroma_scalar(taste, wine_scalar):
       return group
 
 
+def pick_wines_by_geo(wine_df, geo_picker):
+  if geo_picker == []:
+    return wine_df
+  picking = lambda x: any(geo in x for geo in geo_picker)
+  return wine_df.loc[wine_df['Geo'].apply(picking) == True]
+
+
 def sort_by_aroma_similarity(df, food_vector):
   df['aroma distance'] = df['aroma vector'].apply(lambda v: spatial.distance.cosine(v, food_vector))
   df.sort_values(by=['aroma distance'], ascending=True, inplace=True)
   return df
+
+
+def get_descriptor_similarity(descriptor, food_vec, word2vec):
+  descriptor_vec = word2vec.wv[descriptor]
+  return 1 - spatial.distance.cosine(descriptor_vec, food_vec)
+
+def get_most_impactful_descriptors(wine_descriptor_df, variety, geo, food_vec, word2vec):
+  df = wine_descriptor_df.loc[(wine_descriptor_df['Variety'] == variety) & (wine_descriptor_df['Geo'] == geo)]
+  df['similarity'] = df['descriptor'].map(lambda d: get_descriptor_similarity(d, food_vec, word2vec))
+  df.sort_values(['similarity', 'frequency'], ascending=False, inplace=True)
+  df = df.head(5)
+  return list(df['descriptor'])
 
 
 if __name__ == '__main__':
@@ -89,16 +107,20 @@ if __name__ == '__main__':
   # standardize wine nonaroma scalar to a scale of 1 to 4
   for taste in core_nonaromas:
     col_name = taste + ' scalar'
-    wine_vector_df[col_name] = wine_vector_df[col_name].map(lambda scalar: standardize_wine_nonaroma_scalar(taste, scalar))
+    wine_vector_df[taste] = wine_vector_df[col_name].map(lambda scalar: standardize_wine_nonaroma_scalar(taste, scalar))
 
   
-  food_list = ['steak']
+  food_list = ['hotdog', 'mustard', 'tomato', 'onion', 'pepperoncini', 'gherkin', 'celery', 'relish']
   food_nonaroma_values, food_weight, food_avg_vector = retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, food_tokenizer, food_phraser, aroma_descriptor_mapper, word2vec)
 
+  geo_picker = ['USA', 'France']
+  wine_vector_df = pick_wines_by_geo(wine_vector_df, geo_picker)
+
   wine_recommendations = nonaroma_ruling(wine_vector_df, food_nonaroma_values, food_weight)
-  wine_recommendations = congruent_or_contrasting(wine_recommendations, food_nonaroma_values)
+  wine_recommendations = congruent_or_contrasting_pairing(wine_recommendations, food_nonaroma_values)
   wine_recommendations = sort_by_aroma_similarity(wine_recommendations, food_avg_vector)
-  print(wine_recommendations)
-  
-  
-  
+  wine_recommendations['most_impactful_descriptor'] = wine_recommendations.apply(lambda w: get_most_impactful_descriptors(wine_descriptor_df, w['Variety'], w['Geo'], food_avg_vector, word2vec), axis=1)
+
+  congruent_recommendations = wine_recommendations.loc[wine_recommendations['pairing_type'] == 'congruent'].head(4)
+  contrasting_recommendations = wine_recommendations.loc[wine_recommendations['pairing_type'] == 'contrasting'].head(4)
+  print(congruent_recommendations, contrasting_recommendations)
