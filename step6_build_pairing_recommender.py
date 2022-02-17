@@ -1,7 +1,9 @@
+from webbrowser import get
 from data_importer import import_food_phraser, import_aroma_descriptor_mapping, import_wine_variety_vector_info, import_wine_variety_descriptor_info, import_food_nonaroma_info, import_word2vec_model
 from scipy import spatial
 from step1_train_word_embedding import normalize_sentence
 from step4_prepare_food_data_set import get_food_list_avg_vector
+from step5_define_pairing_rules import nonaroma_ruling, congruent_or_contrasting
 
 
 def minmax_scaler(val, min_val, max_val):
@@ -41,8 +43,10 @@ def retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, te
   food_nonaroma_values = dict()
   avg_food_embedding = get_food_list_avg_vector(food_list, text_tokenizer, text_phraser, descriptor_mapper, word2vec)
   for nonaroma in core_nonaromas:
-    food_nonaroma_values[nonaroma] = get_standardized_nonaroma_values(nonaroma, avg_food_embedding, food_nonaroma_df)
-  return food_nonaroma_values, avg_food_embedding
+    value = get_standardized_nonaroma_values(nonaroma, avg_food_embedding, food_nonaroma_df)
+    if nonaroma == 'weight': food_weight = value
+    else: food_nonaroma_values[nonaroma] = value
+  return food_nonaroma_values, food_weight, avg_food_embedding
 
 
 def standardize_wine_nonaroma_scalar(taste, wine_scalar):
@@ -59,6 +63,12 @@ def standardize_wine_nonaroma_scalar(taste, wine_scalar):
   for group, (lower, upper) in groups[taste].items():
     if group == 1 and lower <= wine_scalar <= upper or group != 1 and lower < wine_scalar <= upper:
       return group
+
+
+def sort_by_aroma_similarity(df, food_vector):
+  df['aroma distance'] = df['aroma vector'].apply(lambda v: spatial.distance.cosine(v, food_vector))
+  df.sort_values(by=['aroma distance'], ascending=True, inplace=True)
+  return df
 
 
 if __name__ == '__main__':
@@ -80,9 +90,15 @@ if __name__ == '__main__':
   for taste in core_nonaromas:
     col_name = taste + ' scalar'
     wine_vector_df[col_name] = wine_vector_df[col_name].map(lambda scalar: standardize_wine_nonaroma_scalar(taste, scalar))
-  
-  
 
+  
+  food_list = ['steak']
+  food_nonaroma_values, food_weight, food_avg_vector = retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, food_tokenizer, food_phraser, aroma_descriptor_mapper, word2vec)
+
+  wine_recommendations = nonaroma_ruling(wine_vector_df, food_nonaroma_values, food_weight)
+  wine_recommendations = congruent_or_contrasting(wine_recommendations, food_nonaroma_values)
+  wine_recommendations = sort_by_aroma_similarity(wine_recommendations, food_avg_vector)
+  print(wine_recommendations)
   
   
   
