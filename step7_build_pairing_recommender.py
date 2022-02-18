@@ -1,6 +1,6 @@
 from data_importer import import_food_phraser, import_aroma_descriptor_mapping, import_wine_variety_vector_info, import_wine_variety_descriptor_info, import_food_nonaroma_info, import_word2vec_model
 from scipy import spatial
-from step1_train_word_embedding import normalize_sentence
+from step1_train_wine_and_food_word_embedding import normalize_sentence
 from step4_prepare_food_data_set import get_food_list_avg_vector
 from step5_define_pairing_rules import nonaroma_ruling, congruent_or_contrasting_pairing
 

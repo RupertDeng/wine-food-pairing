@@ -1,6 +1,6 @@
 from data_importer import import_wine_data, import_variety_mapping, import_normalized_geo_data, import_descriptor_mapping, import_wine_phraser
 import pandas as pd
-from step1_train_word_embedding import normalize_sentence, find_mapped_descriptor
+from step1_train_wine_and_food_word_embedding import normalize_sentence, find_mapped_descriptor
 from dask_multiprocessing import dask_compute
 
 def cleanup_variety(df, mapping):

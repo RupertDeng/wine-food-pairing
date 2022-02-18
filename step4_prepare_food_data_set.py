@@ -1,5 +1,5 @@
 from data_importer import import_list_of_foods, import_food_phraser, import_word2vec_model, import_aroma_descriptor_mapping
-from step1_train_word_embedding import normalize_sentence, find_mapped_descriptor
+from step1_train_wine_and_food_word_embedding import normalize_sentence, find_mapped_descriptor
 from scipy import spatial
 import numpy as np
 import pandas as pd

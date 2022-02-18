@@ -84,3 +84,24 @@ def create_text(gs, n, impactful_descriptors):
     
     text = f'Complementary wine aromas:\n\n{impactful_descriptors[0]}, \n{impactful_descriptors[1]}, \n{impactful_descriptors[2]}, \n{impactful_descriptors[3]}, \n{impactful_descriptors[4]}'
     ax.text(x=0, y=1, s=text, fontsize=12, color='grey')
+
+
+def plot_wine_recommendations(pairing_wines, pairing_nonaromas, pairing_body, impactful_descriptors, pairing_types):
+
+    subplot_rows = 3
+    subplot_columns = 4
+    plt.figure(figsize=(20, 7), dpi=96)
+
+    gs = gridspec.GridSpec(3, 4, height_ratios=[3, 0.5, 1]) 
+
+    spider_nr = 0
+    number_line_nr = 4
+    descriptor_nr = 8
+
+    for w in range(4):
+        make_spider(gs, spider_nr, pairing_nonaromas[w], pairing_wines[w], 'red', pairing_types[w])
+        plot_number_line(gs, number_line_nr, pairing_body[w], dot_color='red')
+        create_text(gs, descriptor_nr, impactful_descriptors[w])
+        spider_nr += 1
+        number_line_nr += 1
+        descriptor_nr += 1
