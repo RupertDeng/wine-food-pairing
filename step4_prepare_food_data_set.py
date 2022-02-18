@@ -6,6 +6,16 @@ import pandas as pd
 
 
 def get_food_vector(food, text_tokenizer, text_phraser, descriptor_mapper, word2vec):
+  """
+  function to get the average embedding vector for a food string
+
+  args:
+  - text_tokenizer: utility function to tokenize and normalize food string
+  - text_phraser: utility function to convert tokenized food string to standard phrases
+  - descriptor_mapper: a reference descriptor_mapping dataframe which will be used to convert some aroma word in food string to uniformed word
+  - word2vec: the word2vec model trained with all processed wine and food vocabulary
+  
+  """
   food_tokenized = text_tokenizer(food)
   food_phrased = text_phraser[food_tokenized]
   food_descriptorized = [find_mapped_descriptor(part, descriptor_mapper) or part for part in food_phrased]
@@ -24,6 +34,9 @@ def get_food_vector(food, text_tokenizer, text_phraser, descriptor_mapper, word2
   
 
 def get_food_list_avg_vector(food_list, text_tokenizer, text_phraser, descriptor_mapper, word2vec):
+  """
+  function to get average embedding vector for a list of food
+  """
   vectors = []
   for food in food_list:
     vec = get_food_vector(food, text_tokenizer, text_phraser, descriptor_mapper, word2vec)

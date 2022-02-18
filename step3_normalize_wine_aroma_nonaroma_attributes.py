@@ -78,6 +78,9 @@ def get_variety_vectors_descriptors(variety_geo, wine_df, core_tastes, limited_t
 
 
 def normalize_nonaroma_scalar(wine_df, taste):
+  """
+  simple min-max scaler to normalize each taste scaler for each wine
+  """
   col_name = taste + ' scalar'
   max_value = wine_df[col_name].max()
   min_value = wine_df[col_name].min()

@@ -1,5 +1,9 @@
 import numpy as np
 
+# These pairing rules are directly from Roald Schuring's script, meticulously designed based on his own knowledge on wines.
+# A set of rules to rid un-suitable wines, and another set of pairing rules to pick the congruent and contrasting pairing matches.
+
+
 # --------------------------------- a set of rules to get rid of un-suitable wines --------------------------------
 def weight_rule(df, food_weight):
     # Rule 1: the wine should have at least the same body as the food
