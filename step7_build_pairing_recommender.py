@@ -4,6 +4,7 @@ from step1_train_wine_and_food_word_embedding import normalize_sentence
 from step4_prepare_food_data_set import get_food_list_avg_vector
 from step5_define_pairing_rules import nonaroma_ruling, congruent_or_contrasting_pairing
 import pandas as pd
+from step6_make_visualization_tool import plot_wine_recommendations
 
 
 def minmax_scaler(val, min_val, max_val):
@@ -157,7 +158,6 @@ if __name__ == '__main__':
   aroma_descriptor_mapper = import_aroma_descriptor_mapping()
   word2vec = import_word2vec_model()
 
-
   # standardize wine nonaroma scalar to a scale of 1 to 4
   for taste in core_nonaromas:
     col_name = taste + ' scalar'
@@ -181,3 +181,10 @@ if __name__ == '__main__':
   contrasting_recommendations = wine_recommendations.loc[wine_recommendations['pairing_type'] == 'contrasting'].head(4).reset_index(drop=True)
 
   final_wine_recommendations = merge_congruent_and_contrasting(congruent_recommendations, contrasting_recommendations)
+
+  # make visualization plots
+
+  wine_plot_data = [dict(final_wine_recommendations.iloc[w]) for w in range(len(final_wine_recommendations))]
+  food_plot_data = {taste + ' scalar': food_nonaroma_values[taste] for taste in food_nonaroma_values}
+  food_plot_data['weight scalar'] = food_weight
+  plot_wine_recommendations(wine_plot_data, food_plot_data)
