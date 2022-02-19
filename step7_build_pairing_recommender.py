@@ -164,7 +164,7 @@ if __name__ == '__main__':
     wine_vector_df[taste] = wine_vector_df[col_name].map(lambda scalar: standardize_wine_nonaroma_scalar(taste, scalar))
 
   # get all key attributes for a list of food, including average food vector, and nonaroma scaled values
-  food_list = ['ham']
+  food_list = ['sea bass']
   food_nonaroma_values, food_weight, food_avg_vector = retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, food_tokenizer, food_phraser, aroma_descriptor_mapper, word2vec)
 
   # filter wine dataframe by a list of country
@@ -185,6 +185,7 @@ if __name__ == '__main__':
   # make visualization plots
 
   wine_plot_data = [dict(final_wine_recommendations.iloc[w]) for w in range(len(final_wine_recommendations))]
-  food_plot_data = {taste + ' scalar': food_nonaroma_values[taste] for taste in food_nonaroma_values}
-  food_plot_data['weight scalar'] = food_weight
+  food_plot_data = {taste + ' scalar': food_nonaroma_values[taste][0] for taste in food_nonaroma_values}
+  food_plot_data['weight scalar'] = food_weight[0]
+  food_plot_data['food'] = ', '.join(food_list)
   plot_wine_recommendations(wine_plot_data, food_plot_data)
