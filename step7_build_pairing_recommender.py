@@ -164,11 +164,14 @@ if __name__ == '__main__':
     wine_vector_df[taste] = wine_vector_df[col_name].map(lambda scalar: standardize_wine_nonaroma_scalar(taste, scalar))
 
   # get all key attributes for a list of food, including average food vector, and nonaroma scaled values
-  food_list = ['sea bass']
+  print('\nPlease input a list of food ingredients, separated by comma:')
+  food_list = [f.strip(' ') for f in input().split(',') if f]
+  if not food_list: print('No food ingredients provided!\n'); quit()
   food_nonaroma_values, food_weight, food_avg_vector = retrieve_all_food_attributes(food_list, food_nonaroma_df, core_nonaromas, food_tokenizer, food_phraser, aroma_descriptor_mapper, word2vec)
 
   # filter wine dataframe by a list of country
-  geo_picker = ['USA', 'France']
+  print('\nPlease input a list of countries for wine selection, separated by comma:')
+  geo_picker = [c.strip(' ') for c in input().split(',') if c]
   wine_vector_df = pick_wines_by_geo(wine_vector_df, geo_picker)
 
   # now, utilizing the defined pairing rules, 4 wines are picked consisting of congruent and/or contrasting pairing, as well as the most impactful descriptors of each wine
