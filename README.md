@@ -39,8 +39,16 @@ dask.dataframe
 
 ## 4) Step2_prepare_wine_data_set
 - Now the wine_data set is being trimmed by wine variety and geography, only keeping the relatively frequent ones.
-- And the resulting dataframe is re-processed through tokenizer, phraser and descriptor mapper under each core tastes in ['aroma', 'weight', 'sweet', 'acid', 'salt', 'piquant', 'fat', 'bitter']. This is to extract key information from every wine review sentences.
+- And the resulting dataframe is re-processed through tokenizer, phraser and descriptor mapper under each core tastes in [aroma, weight, sweet, acid, salt, piquant, fat, bitter]. This is to extract key information from every wine review sentences.
 - The processed wine data is saved to csv under '/processed_data'.
+
+## 5) Step3_normalize_wine_aroma_nonaroma_attributes
+- The purpose of this script is to convert the wine review terms into numbers which we can use later to pair with food.
+- For aroma attribute, we get the average word embedding vector from the list of aroma descriptors for each wine variety-geo combination. The `Word2Vec model` trained in step1 is doing its job here. `sklearn TfidfVectorizer` is also used to apply weight on each term.
+- For other non-aroma attribute, we convert them to an average scalar for each wine. The scalarized method used is `sklearn PCA` dimension reduction.
+- The wine dataframe with each core taste vecotrized/scalarized for every wine variety-geo is saved to csv in '/processed_data'.
+- Obtained at the same time is the 50 most frequently mentioned aroma descriptors for each wine, which is also saved to csv in '/processed_data'.
+
 
 
 
