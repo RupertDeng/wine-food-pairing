@@ -49,6 +49,11 @@ dask.dataframe
 - The wine dataframe with each core taste vecotrized/scalarized for every wine variety-geo is saved to csv in '/processed_data'.
 - Obtained at the same time is the 50 most frequently mentioned aroma descriptors for each wine, which is also saved to csv in '/processed_data'.
 
+## 5) Step4_prepare_food_data_set
+- For food data set, a similar vectorization/scalarization treatment needs to be done, and Roald proposed an ingenious approach.
+- For each non-aroma core taste, we are going to have a list of typical food with our common sense. Then an average vector is obtained in the same way mentioned in Step3. This vector is taken as the center for that specific taste.
+- Then the comprehensive list of food reference is coming to play. We go through all the foods and check their distance with each taste's center vector, by `scipy spatial`. Closest distance and farthest distance are stored for each taste.
+- The food average taste vector and distance info are saved to a csv file in '/processed_data'.
 
 
 
