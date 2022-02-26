@@ -32,9 +32,17 @@ dask.dataframe
 
 ## 3) Step1_train_wine_and_food_word_embedding
 - This script will first process raw wine and food review sentences with `nltk sent_tokenize, word_tokenize, and SnowballStemmer` to convert words to normalized terms.
-- Then the wine and food corpora will be individually sent through `gensim Phrases` to capture multi-gram phrases frequently mentioned. I found this one can be a bit tricky with the threshold setting. Sometimes finding two many phrases might be bad for downstream process since it can hide useful single words. Also gensim phraser seems not to have a multi-core enabler, it takes relatively long time.
+- Then the wine and food corpora will be individually sent through `gensim Phrases` to capture multi-gram phrases frequently mentioned. I found this one can be a bit tricky with the threshold setting. Sometimes finding two many phrases might be bad for downstream process since it can hide useful single words. Also gensim phraser seems not to have a multi-processing enabler, it takes relatively long time.
 - The next step is to `map some important terms into standard descriptors`, for both wine and food corpora. This is essential to distinguishing wine tastes, as well as linking wine and food data set properly.
-- The last step in this script is to train combined processed wine and food corpora in `gensim Word2Vec` to get a word-to-vector model. The trained model is saved in '/trained_models/'.
+- The last step in this script is to train combined processed wine and food corpora in `gensim Word2Vec` to get a word-to-vector model. Word2vec library does have a multi-worker option.
+- The trained model is saved in '/trained_models/'.
+
+## 4) Step2_prepare_wine_data_set
+- Now the wine_data set is being trimmed by wine variety and geography, only keeping the relatively frequent ones.
+- And the resulting dataframe is re-processed through tokenizer, phraser and descriptor mapper under each core tastes in ['aroma', 'weight', 'sweet', 'acid', 'salt', 'piquant', 'fat', 'bitter']. This is to extract key information from every wine review sentences.
+- The processed wine data is saved to csv under '/processed_data'.
+
+
 
 
 
